@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ukulele Virtual - Pro Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        .ukulele-wood { background: #78350f; }
+        .chord-btn { transition: transform 0.05s, background-color 0.1s; user-select: none; touch-action: none; }
+        .chord-btn:active, .chord-btn.active { transform: scale(0.95); background-color: #92400e; box-shadow: inset 0 4px 6px rgba(0,0,0,0.3); }
+        .lyric-box { height: 350px; overflow-y: auto; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d97706; border-radius: 10px; }
+        input[type=range] { accent-color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden border-2 border-amber-800">
+        <header class="ukulele-wood p-6 text-center text-white">
+            <h1 class="text-2xl font-bold">Ukulele Virtual</h1>
+            
+            <div class="mt-4 bg-white/10 p-4 rounded-xl">
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2">Pengatur Bass</label>
+                <input type="range" id="bassControl" min="-15" max="10" value="0" class="w-full h-2 bg-amber-900 rounded-lg appearance-none cursor-pointer">
+            </div>
+
+            <select id="songSelector" class="mt-4 p-3 rounded-xl text-amber-900 font-bold bg-white w-full max-w-xs cursor-pointer outline-none shadow-inner">
+                <option value="gereja">Gereja Tua</option>
+                <option value="rindu">Rindu Rumah</option>
+                <option value="imni">Imni (Hymn)</option>
+                <option value="natal">Natal di Rumah</option>
+                <option value="kisah">Kisah Kasih di Sekolah</option>
+                <option value="paik">Paik Inseri</option>
+            </select>
+
+            <div class="flex flex-wrap justify-center gap-2 mt-4">
+                <button id="startButton" class="bg-yellow-400 text-amber-900 px-6 py-3 rounded-full font-bold hover:bg-yellow-300 transition shadow-lg">Klik untuk Aktifkan Suara</button>
+            </div>
+            <p id="status" class="mt-2 text-xs italic opacity-75">Status: Audio Mati</p>
+        </header>
+
+        <div class="lyric-box p-6 bg-gray-50 border-b border-gray-200 custom-scrollbar">
+            <div id="lyrics-content" class="text-gray-800 space-y-4 text-lg font-medium leading-relaxed whitespace-pre-line"></div>
+        </div>
+
+        <div class="p-6 grid grid-cols-4 sm:grid-cols-7 gap-2">
+            <button id="btn-G" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('G')" onpointerup="stopChord('G')" onpointerleave="stopChord('G')">G</button>
+            <button id="btn-C" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('C')" onpointerup="stopChord('C')" onpointerleave="stopChord('C')">C</button>
+            <button id="btn-D" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('D')" onpointerup="stopChord('D')" onpointerleave="stopChord('D')">D</button>
+            <button id="btn-Em" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('Em')" onpointerup="stopChord('Em')" onpointerleave="stopChord('Em')">Em</button>
+            <button id="btn-Am" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('Am')" onpointerup="stopChord('Am')" onpointerleave="stopChord('Am')">Am</button>
+            <button id="btn-F" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('F')" onpointerup="stopChord('F')" onpointerleave="stopChord('F')">F</button>
+            <button id="btn-Dm" class="chord-btn bg-amber-700 text-white p-3 rounded-xl font-bold border-b-4 border-amber-900" onpointerdown="startChord('Dm')" onpointerup="stopChord('Dm')" onpointerleave="stopChord('Dm')">Dm</button>
+        </div>
+    </div>
+
+    <script>
+        const songs = {
+            gereja: `Gereja Tua\n\n[G] Masihkah kau ingat waktu di desa\n[C] Bercanda bersama di samping gereja\n[G] Kala itu kita masih remaja\n[D] Yang polos hatinya bercerita...\n\n[G] Waktu kini t'lah lama berlalu\n[C] Sudah sepuluh tahun tak bertemu\n[G] Entah dimana kini kau berada\n[D] Tak tahu dimana rumahnya...\n\n[G] Kita pernah berjanji di sana\n[C] Di depan altar yang penuh makna\n[G] Sumpah setia kita ucapkan\n[D] Dalam kasih Tuhan diikatkan...\n\n[G] Kini gereja tua telah sepi\n[C] Meninggalkan kenangan yang abadi\n[G] Dalam doa kuingat selalu\n[D] Kasih kita yang dulu menyatu...`,
+            rindu: `Rindu Rumah\n\n[G] Tahun berganti tahun, waktu mengajakku tumbuh dewasa\n[C] Banyak suasana telah berubah, karena hukum dan tuntutan dunia\n[G] Rindu memaksaku untuk kembali, menengok kenangan masa kecilku\n[D] Yang penuh cinta dibalut kehangatan, kini aku t'lah jauh berada...\n\n[G] Masih kuingat langkah kakiku\n[C] Bermain di halaman rumah tua\n[G] Suara ibu memanggil namaku\n[D] Ingin rasanya ku pulang segera...\n\n[G] Semoga Tuhan menjaganya\n[C] Rumah tempatku dibesarkan\n[G] Biarlah damai tetap ada\n[D] Di sana tempatku kan pulang...`,
+            imni: `Imni (Hymn)\n\n[G] Betapa indah rumah-Mu\n[C] Tempat teduh hatiku\n[G] Di sana damai kurasakan\n[D] Dalam pelukan kasih-Mu...\n\n[G] Walau badai datang menerpa\n[C] Hatiku tetap percaya\n[G] Engkau selalu ada di sana\n[D] Menjagaku selamanya...\n\n[G] Terpujilah nama-Mu Tuhan\n[C] Sumber harapan yang sejati\n[G] Di dalam rumah-Mu yang kudus\n[D] Hatiku tenang bersyukur...`,
+            natal: `Natal di Rumah\n\n[G] Kalo inga natal di rumah\n[C] Aer mata tatumpah\n[G] Sio rindu mama deng basudara\n[D] Sekarang waktu kang su barobah\n\n[G] Beta su jauh di rantau tapele gunung tanah\n[C] Tapi hati ini tetap rindu\n[G] Natal nanti bisakah bertemu\n[D] Menikmati kasih bersama...\n\n[G] Biarlah doa ini membawa\n[C] Rasa rindu ke rumah tua\n[G] Natal bukan soal mewah\n[D] Tapi hati yang bersatu...`,
+            kisah: `Kisah Kasih di Sekolah\n\n[G] Resah dan gelisah\n[C] Menunggu di sini\n[G] Di sudut sekolah\n[D] Tempat yang kau janjikan\n\n[G] Ingin jumpa denganku\n[C] Walau mencuri waktu\n[G] Berdusta pada guru\n[D] Malu aku pada teman-temanku...\n\n[G] Kisah kasih di sekolah\n[C] Dengan dirimu diriku\n[G] Walau harus berpisah\n[D] Kenangan tetap tersimpan...`,
+            paik: `PAIK INSERI\n\n[G] Insose be ara Riso.\n[C] Wakawos be yababo kwanggun e.\n[G] Mbo waburya.\n[D] Sasaro masaya fawi Robarya yaburi yabor yaye,\n\n[G] Paik inseri beswarepen be aya beskabrai saswar\n[C] Wo benari wawafrao yakaber besya\n[G] Insose ara befnder nara\n[D] Yeno yensanumi yaswar beromanggundi\n[G] Uno kuburi ku beroi manggunpun\n\n[G] Beromanggundi, beromanggundi\n[C] Paik inseri, Paik inseri\n[G] Insose be ara Riso\n[D] Kita jaga bersama...`
+        };
+
+        const chords = {
+            'G': ['G3', 'B3', 'D4', 'G4'], 'C': ['G3', 'C4', 'E4', 'G4'],
+            'D': ['A3', 'D4', 'F#4', 'A4'], 'Em': ['E3', 'G3', 'B3', 'E4'],
+            'Am': ['A3', 'C4', 'E4', 'A4'], 'F': ['F3', 'A3', 'C4', 'F4'],
+            'Dm': ['D3', 'F3', 'A3', 'D4']
+        };
+
+        let synth, eq, chorus, reverb, isInitialized = false;
+
+        const startButton = document.getElementById('startButton');
+        const songSelector = document.getElementById('songSelector');
+        const lyricsContent = document.getElementById('lyrics-content');
+        const statusText = document.getElementById('status');
+
+        songSelector.addEventListener('change', (e) => lyricsContent.innerText = songs[e.target.value]);
+        lyricsContent.innerText = songs['gereja'];
+
+        async function initAudio() {
+            if (isInitialized) return;
+            try {
+                await Tone.start();
+                
+                // Initialize nodes
+                eq = new Tone.EQ3({ low: 0, mid: 0, high: 0 }).toDestination();
+                chorus = new Tone.Chorus(4, 2.5, 0.5).start();
+                reverb = new Tone.Reverb(1.5);
+                
+                // Properly wait for reverb generation
+                await reverb.generate();
+                
+                synth = new Tone.PolySynth(Tone.Synth, {
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.05, decay: 0.1, sustain: 0.8, release: 0.8 }
+                });
+
+                // Connect chain: Synth -> Reverb -> Chorus -> EQ
+                synth.connect(reverb);
+                reverb.connect(chorus);
+                chorus.connect(eq);
+                
+                isInitialized = true;
+                startButton.innerText = "Audio Siap!";
+                startButton.classList.add('bg-green-600', 'text-white');
+                statusText.innerText = "Status: Suara aktif. Atur Bass di atas!";
+            } catch (err) {
+                console.error("Audio init failed:", err);
+                statusText.innerText = "Error: Coba klik lagi.";
+            }
+        }
+
+        document.getElementById('bassControl').addEventListener('input', (e) => {
+            if(eq) eq.low.value = parseFloat(e.target.value);
+        });
+
+        startButton.addEventListener('click', initAudio);
+
+        function startChord(c) {
+            if (!isInitialized) return;
+            synth.triggerAttack(chords[c]);
+            const el = document.getElementById('btn-'+c);
+            if(el) el.classList.add('active');
+        }
+
+        function stopChord(c) {
+            if (!isInitialized) return;
+            synth.triggerRelease(chords[c]);
+            const el = document.getElementById('btn-'+c);
+            if(el) el.classList.remove('active');
+        }
+
+        const keyMap = { 'g':'G', 'c':'C', 'd':'D', 'e':'Em', 'a':'Am', 'f':'F', 'r':'Dm' };
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.repeat) return; 
+            const chord = keyMap[e.key.toLowerCase()];
+            if (chord) startChord(chord);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const chord = keyMap[e.key.toLowerCase()];
+            if (chord) stopChord(chord);
+        });
+    </script>
+</body>
+</html>
